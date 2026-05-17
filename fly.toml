@@ -1,0 +1,30 @@
+# Fly.io configuration file
+# Para usar: fly launch e fly deploy
+
+app = "belgaauth"
+primary_region = "gru"  # São Paulo
+
+[build]
+  builder = "paketobuildpacks/builder:base"
+
+[env]
+  ASPNETCORE_ENVIRONMENT = "Production"
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+
+
+
+
+

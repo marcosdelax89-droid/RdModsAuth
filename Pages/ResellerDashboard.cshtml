@@ -1,0 +1,127 @@
+@page
+@model BelgaAuthAPI.Pages.ResellerDashboardModel
+@{
+    ViewData["Title"] = "Dashboard Revendedor";
+    ViewData["Page"] = "Dashboard";
+    ViewData["UseResellerLayout"] = "true";
+    Layout = "_ResellerLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-shop"></i> Dashboard Revendedor</h1>
+    <span class="text-muted">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people"></i> Total de Usuários</h5>
+                <h2 id="totalUsers">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle"></i> Usuários Ativos</h5>
+                <h2 id="activeUsers">0</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-activity"></i> Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <a href="/ResellerUsers" class="btn btn-outline-primary">
+                    <i class="bi bi-people"></i> Ver Todos os Usuários
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-clock-history"></i> Usuários Recentes</h5>
+            </div>
+            <div class="card-body">
+                <div id="recentUsers">
+                    <p class="text-muted">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/reseller/users');
+            if (response.ok) {
+                const users = await response.json();
+                // Apenas usuários criados por este revendedor
+                const totalUsers = users.length;
+                const activeUsers = users.filter(u => !u.isBanned).length;
+                
+                document.getElementById('totalUsers').textContent = totalUsers;
+                document.getElementById('activeUsers').textContent = activeUsers;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar estatísticas:', error);
+        }
+    }
+
+    async function loadRecentUsers() {
+        try {
+            const response = await fetch('/api/reseller/users');
+            if (response.ok) {
+                const users = await response.json();
+                // Ordenar por data de criação (mais recentes primeiro) e pegar os 10 primeiros
+                const recentUsers = users
+                    .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate))
+                    .slice(0, 10);
+                
+                const html = recentUsers.length > 0 
+                    ? recentUsers.map(u => {
+                        const lastLogin = u.lastLogin 
+                            ? new Date(u.lastLogin).toLocaleString('pt-BR')
+                            : 'Nunca';
+                        return `
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
+                            <div>
+                                <strong>${u.username}</strong><br>
+                                <small class="text-muted">Último Login: ${lastLogin} - Criado em ${new Date(u.createdDate).toLocaleDateString('pt-BR')}</small>
+                            </div>
+                            <span class="badge ${u.isBanned ? 'bg-danger' : 'bg-success'}">
+                                ${u.isBanned ? 'Banido' : 'Ativo'}
+                            </span>
+                        </div>
+                    `;
+                    }).join('')
+                    : '<p class="text-muted">Nenhum usuário encontrado</p>';
+                
+                document.getElementById('recentUsers').innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar usuários:', error);
+        }
+    }
+
+    loadStats();
+    loadRecentUsers();
+    setInterval(() => {
+        loadStats();
+        loadRecentUsers();
+    }, 30000);
+</script>
+}
+

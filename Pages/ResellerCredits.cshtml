@@ -1,0 +1,397 @@
+@page
+@model BelgaAuthAPI.Pages.ResellerCreditsModel
+@{
+    ViewData["Title"] = "Meus Créditos";
+    Layout = "_ResellerLayout";
+    ViewData["Page"] = "Credits";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-coin"></i> Meus Créditos</h1>
+    <div class="d-flex align-items-center gap-3">
+        <div class="user-badge" style="font-size: 1.1rem; padding: 10px 20px;">
+            <i class="bi bi-wallet2"></i>
+            <span>Saldo:</span>
+            <strong id="creditBalance" class="text-white">...</strong>
+            <span class="text-muted">créditos</span>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Pacotes de Créditos -->
+    <div class="col-lg-7 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-bag-plus"></i> Comprar Créditos via PIX
+            </div>
+            <div class="card-body">
+                <div class="row g-3" id="packagesContainer">
+                    <!-- Preenchido via JS -->
+                </div>
+                
+                <!-- Checkout / Cupom Area -->
+                <div id="checkoutArea" class="d-none mt-4 p-3 rounded border border-light border-opacity-10" style="background: rgba(255,255,255,0.02);">
+                    <h5 class="text-white mb-3"><i class="bi bi-cart-check me-2"></i>Checkout do Pacote</h5>
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Pacote Selecionado: <strong id="selectedCreditsInfo" class="text-white">...</strong></p>
+                            <p class="text-muted mb-1">Valor Original: <strong id="selectedAmountInfo" class="text-white">...</strong></p>
+                            <div id="couponAppliedBadge" class="d-none mt-1">
+                                <span class="badge bg-success"><i class="bi bi-tag-fill me-1"></i>Cupom Ativado!</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Tem um Cupom de Desconto?</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control text-uppercase font-monospace" id="couponInput" placeholder="EX: DESCONTO10" style="background: rgba(0,0,0,0.3); color: #fff; border-color: rgba(255,255,255,0.1);">
+                                <button class="btn btn-outline-light" type="button" onclick="applyCoupon()"><i class="bi bi-check-circle"></i> Aplicar</button>
+                            </div>
+                            <div id="couponStatusMessage" class="small mt-1 text-danger d-none"></div>
+                        </div>
+                    </div>
+
+                    <hr class="border-light border-opacity-10 my-3">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <p class="mb-0 text-muted">Total a Pagar:</p>
+                            <h4 class="text-white fw-bold mb-0" id="finalAmountInfo">R$ 0,00</h4>
+                        </div>
+                        <div>
+                            <p class="mb-0 text-muted text-end">Créditos a Receber:</p>
+                            <h4 class="text-white fw-bold mb-0 text-end" id="finalCreditsInfo">0</h4>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-light w-100 py-2 fw-bold" onclick="executePixPurchase()"><i class="bi bi-qr-code"></i> Gerar PIX do Pedido</button>
+                </div>
+
+                <!-- QR Code PIX -->
+                <div id="pixPaymentArea" class="d-none mt-4">
+                    <div class="text-center p-4 rounded border border-light border-opacity-10" style="background: rgba(0,0,0,0.3);">
+                        <h5 class="text-white mb-3"><i class="bi bi-qr-code me-2"></i>Pagamento PIX</h5>
+                        <div id="pixQrCode" class="mb-3">
+                            <img id="pixQrImage" src="" alt="QR Code PIX" style="max-width: 250px; border-radius: 12px; background: white; padding: 10px;" class="d-none" />
+                            <div id="pixManualNotice" class="d-none">
+                                <div class="alert alert-info mt-2" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #fff;">
+                                    <i class="bi bi-info-circle me-2"></i>Mercado Pago não configurado. Aguarde a confirmação manual do admin.
+                                </div>
+                            </div>
+                        </div>
+                        <div id="pixCopyPasteArea" class="d-none mb-3">
+                            <label class="form-label text-muted small">Código Copia e Cola:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="pixCopyPasteCode" readonly style="font-size: 0.75rem; background: rgba(0,0,0,0.4); color: #fff; border-color: rgba(255,255,255,0.1);">
+                                <button class="btn btn-outline-light" onclick="copyPixCode()"><i class="bi bi-clipboard"></i></button>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-2"><i class="bi bi-clock me-1"></i>Valor: <strong id="pixAmount" class="text-white"></strong></p>
+                        <p class="text-muted mb-0"><i class="bi bi-coin me-1"></i>Créditos: <strong id="pixCredits" class="text-white"></strong></p>
+                        <div id="pixStatusBadge" class="mt-3">
+                            <span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Aguardando Pagamento...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Preços + Histórico -->
+    <div class="col-lg-5 mb-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-tag"></i> Custo por Licença
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Duração</th>
+                            <th class="text-end">Custo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costTable">
+                        <!-- Preenchido via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history"></i> Histórico Recente</span>
+            </div>
+            <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Créditos</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTable">
+                        <tr><td colspan="3" class="text-center text-muted">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let pollingInterval = null;
+
+    async function loadData() {
+        // Carregar saldo via stats
+        try {
+            const statsRes = await fetch('/api/reseller/stats');
+            if (statsRes.ok) {
+                const stats = await statsRes.json();
+                document.getElementById('creditBalance').textContent = stats.credits;
+                const navEl = document.getElementById('navCredits');
+                if (navEl) navEl.textContent = stats.credits;
+            }
+        } catch(e) {}
+
+        // Carregar pacotes e custos
+        try {
+            const res = await fetch('/api/payments/packages');
+            if (res.ok) {
+                const data = await res.json();
+                renderPackages(data.packages);
+                renderCosts(data.licenseCosts);
+            }
+        } catch(e) {
+            console.error('Erro ao carregar pacotes:', e);
+        }
+
+        // Carregar transações
+        try {
+            const txRes = await fetch('/api/payments/transactions');
+            if (txRes.ok) {
+                const txs = await txRes.json();
+                renderTransactions(txs);
+            }
+        } catch(e) {}
+    }
+
+    let selectedCredits = 0;
+    let selectedPriceCents = 0;
+    let activeCouponCode = '';
+
+    function renderPackages(packages) {
+        const container = document.getElementById('packagesContainer');
+        container.innerHTML = packages.map(p => `
+            <div class="col-md-6">
+                <div class="p-3 rounded border border-light border-opacity-10 text-center hover-card" 
+                     style="background: rgba(255,255,255,0.03); cursor: pointer; transition: all 0.3s ease;"
+                     onmouseover="this.style.borderColor='rgba(255,255,255,0.3)'; this.style.background='rgba(255,255,255,0.06)';"
+                     onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.03)';"
+                     onclick="selectPackage(${p.credits}, '${p.priceFormatted}', ${p.priceCents})">
+                    <div class="mb-2">
+                        <span class="badge bg-light text-dark px-3 py-2 fs-6 fw-bold">${p.credits} créditos</span>
+                    </div>
+                    <div class="text-white fw-bold fs-5">${p.priceFormatted}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderCosts(costs) {
+        const tbody = document.getElementById('costTable');
+        const labels = { 1: '1 Dia', 5: '5 Dias', 7: '7 Dias', 30: '30 Dias', 999: 'Lifetime' };
+        tbody.innerHTML = Object.entries(costs).map(([days, cost]) => `
+            <tr>
+                <td>${labels[days] || days + ' Dias'}</td>
+                <td class="text-end"><span class="badge bg-light text-dark">${cost} créditos</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function renderTransactions(txs) {
+        const tbody = document.getElementById('transactionsTable');
+        if (!txs.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Nenhuma transação</td></tr>';
+            return;
+        }
+        tbody.innerHTML = txs.map(t => {
+            const isPositive = t.amount > 0;
+            const typeLabel = { purchase: 'Compra', usage: 'Uso', admin_add: 'Admin +', admin_remove: 'Admin -' }[t.type] || t.type;
+            const date = new Date(t.createdDate).toLocaleDateString('pt-BR');
+            return `
+                <tr>
+                    <td><small>${typeLabel}</small></td>
+                    <td><span class="${isPositive ? 'text-success' : 'text-danger'} fw-bold">${isPositive ? '+' : ''}${t.amount}</span></td>
+                    <td><small class="text-muted">${date}</small></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function selectPackage(credits, priceFormatted, priceCents) {
+        selectedCredits = credits;
+        selectedPriceCents = priceCents;
+        
+        // Resetar cupom
+        activeCouponCode = '';
+        document.getElementById('couponInput').value = '';
+        document.getElementById('couponAppliedBadge').classList.add('d-none');
+        document.getElementById('couponStatusMessage').classList.add('d-none');
+
+        // Mostrar area de checkout
+        document.getElementById('checkoutArea').classList.remove('d-none');
+        document.getElementById('pixPaymentArea').classList.add('d-none'); // Esconder pagamentos antigos
+
+        // Setar infos originais
+        document.getElementById('selectedCreditsInfo').textContent = credits + ' créditos';
+        document.getElementById('selectedAmountInfo').textContent = priceFormatted;
+
+        // Setar infos finais
+        document.getElementById('finalAmountInfo').textContent = priceFormatted;
+        document.getElementById('finalCreditsInfo').textContent = credits;
+
+        // Rolar suavemente até o checkout
+        document.getElementById('checkoutArea').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function applyCoupon() {
+        const code = document.getElementById('couponInput').value.trim();
+        const msgEl = document.getElementById('couponStatusMessage');
+        
+        if (!code) {
+            msgEl.textContent = 'Digite o código do cupom';
+            msgEl.classList.remove('d-none');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/payments/validate-coupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, credits: selectedCredits })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                msgEl.textContent = err.message || 'Cupom inválido';
+                msgEl.classList.remove('d-none');
+                document.getElementById('couponAppliedBadge').classList.add('d-none');
+                
+                // Restaurar originais
+                document.getElementById('finalAmountInfo').textContent = document.getElementById('selectedAmountInfo').textContent;
+                document.getElementById('finalCreditsInfo').textContent = selectedCredits;
+                activeCouponCode = '';
+                return;
+            }
+
+            const data = await res.json();
+            msgEl.classList.add('d-none');
+            document.getElementById('couponAppliedBadge').classList.remove('d-none');
+            
+            // Setar valores com desconto/bonus
+            document.getElementById('finalAmountInfo').textContent = data.finalAmountFormatted;
+            document.getElementById('finalCreditsInfo').textContent = data.finalCredits;
+            activeCouponCode = code;
+        } catch(e) {
+            msgEl.textContent = 'Erro ao conectar';
+            msgEl.classList.remove('d-none');
+        }
+    }
+
+    async function executePixPurchase() {
+        if (!confirm(`Confirmar a geração do PIX no valor de ${document.getElementById('finalAmountInfo').textContent}?`)) return;
+
+        try {
+            const res = await fetch('/api/payments/create-pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    credits: selectedCredits,
+                    couponCode: activeCouponCode
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert('Erro: ' + (err.message || 'Erro ao criar cobrança'));
+                return;
+            }
+
+            const data = await res.json();
+            showPixPayment(data);
+        } catch(e) {
+            alert('Erro de conexão');
+            console.error(e);
+        }
+    }
+
+    function showPixPayment(data) {
+        const area = document.getElementById('pixPaymentArea');
+        area.classList.remove('d-none');
+
+        document.getElementById('pixAmount').textContent = data.amount;
+        document.getElementById('pixCredits').textContent = data.credits;
+
+        if (data.qrCodeUrl) {
+            document.getElementById('pixQrImage').src = data.qrCodeUrl;
+            document.getElementById('pixQrImage').classList.remove('d-none');
+            document.getElementById('pixManualNotice').classList.add('d-none');
+        } else {
+            document.getElementById('pixQrImage').classList.add('d-none');
+            document.getElementById('pixManualNotice').classList.remove('d-none');
+        }
+
+        if (data.pixCopyPaste) {
+            document.getElementById('pixCopyPasteCode').value = data.pixCopyPaste;
+            document.getElementById('pixCopyPasteArea').classList.remove('d-none');
+        } else {
+            document.getElementById('pixCopyPasteArea').classList.add('d-none');
+        }
+
+        // Polling para verificar se o pagamento foi confirmado
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(() => checkPaymentStatus(data.orderId), 5000);
+
+        // Scroll até o QR Code
+        area.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function checkPaymentStatus(orderId) {
+        try {
+            // Usa check-payment que consulta diretamente o Mercado Pago
+            const res = await fetch(`/api/payments/check-payment/${orderId}`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('creditBalance').textContent = data.currentCredits;
+                const navEl = document.getElementById('navCredits');
+                if (navEl) navEl.textContent = data.currentCredits;
+
+                if (data.status === 'paid') {
+                    clearInterval(pollingInterval);
+                    document.getElementById('pixStatusBadge').innerHTML = '<span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Pagamento Confirmado!</span>';
+                    
+                    // Recarregar transações
+                    const txRes = await fetch('/api/payments/transactions');
+                    if (txRes.ok) renderTransactions(await txRes.json());
+
+                    setTimeout(() => {
+                        document.getElementById('pixPaymentArea').classList.add('d-none');
+                    }, 5000);
+                }
+            }
+        } catch(e) {}
+    }
+
+    function copyPixCode() {
+        const code = document.getElementById('pixCopyPasteCode').value;
+        navigator.clipboard.writeText(code);
+        alert('Código PIX copiado!');
+    }
+
+    // Inicialização
+    loadData();
+</script>
+}

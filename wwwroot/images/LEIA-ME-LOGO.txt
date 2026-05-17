@@ -1,0 +1,32 @@
+========================================
+  COMO ADICIONAR SUA LOGO
+========================================
+
+1. Coloque sua imagem de logo na pasta:
+   BelgaAuthAPI/wwwroot/images/
+
+2. Nomeie o arquivo como:
+   - logo.png
+   OU
+   - logo.jpg
+   OU
+   - logo.svg
+
+3. A logo aparecerá automaticamente em:
+   ✅ Página de Login (/Login)
+   ✅ Página de Login Admin (/AdminLogin)
+   ✅ Painel Admin (sidebar)
+   ✅ Painel Revendedor (sidebar)
+
+4. Recomendações:
+   - Tamanho: até 200px de largura
+   - Formato: PNG com fundo transparente (melhor)
+   - Resolução: alta qualidade
+
+5. Se não colocar logo, será exibido o ícone padrão.
+
+========================================
+
+
+
+

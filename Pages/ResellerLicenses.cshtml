@@ -1,0 +1,219 @@
+@page
+@model BelgaAuthAPI.Pages.ResellerLicensesModel
+@{
+    ViewData["Title"] = "Minhas Licenças";
+    Layout = "_ResellerLayout";
+    ViewData["Page"] = "Licenses";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-key"></i> Minhas Licenças</h1>
+</div>
+
+<div class="row">
+    <!-- Formulário de Criação -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-plus-circle"></i> Gerar Nova Licença
+            </div>
+            <div class="card-body">
+                <form id="createLicenseForm">
+                    <div class="mb-3">
+                        <label class="form-label text-muted" style="font-size:0.82rem; text-transform:uppercase; letter-spacing:0.5px;">
+                            <i class="bi bi-person-badge me-1"></i>Subscription vinculada ao seu nome
+                        </label>
+                        <div class="p-2 rounded border border-light border-opacity-10" style="background:rgba(255,255,255,0.03);">
+                            <span class="text-white fw-bold font-monospace">
+                                @(User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Revendedor")
+                            </span>
+                            <small class="text-muted ms-2">(definido automaticamente)</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="daysValid" class="form-label">Duração da Licença</label>
+                        <select class="form-select" id="daysValid" required>
+                            <option value="1">1 Dia (Diário)</option>
+                            <option value="5">5 Dias</option>
+                            <option value="7">7 Dias (Semanal)</option>
+                            <option value="30" selected>30 Dias (Mensal)</option>
+                            <option value="999">Lifetime</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-magic"></i> Gerar Licença
+                    </button>
+                </form>
+                
+                <!-- Resultado de geração -->
+                <div id="generationResult" class="mt-4 d-none">
+                    <div class="p-3 bg-dark rounded border border-light border-opacity-10 text-center">
+                        <p class="mb-1 text-muted">Sua Licença Gerada:</p>
+                        <h4 class="mb-3 text-white" id="generatedKeyDisplay" style="font-family: monospace; letter-spacing: 1px;"></h4>
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyGeneratedKey()">
+                            <i class="bi bi-clipboard"></i> Copiar Licença
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Licenças -->
+    <div class="col-md-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history"></i> Histórico de Licenças Geradas</span>
+                <input type="text" class="form-control form-control-sm w-50" id="searchBox" placeholder="Buscar por chave...">
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Chave</th>
+                                <th>Subscription</th>
+                                <th>Dias</th>
+                                <th>Status</th>
+                                <th>Criado Em</th>
+                                <th>Data de Uso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="licensesTable">
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Carregando...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let resellerLicenses = [];
+
+    // Carregar licenças do revendedor
+    async function loadLicenses() {
+        try {
+            const response = await fetch('/api/reseller/licenses');
+            if (response.ok) {
+                resellerLicenses = await response.json();
+                renderLicenses(resellerLicenses);
+            } else {
+                showTableError();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar licenças:', error);
+            showTableError();
+        }
+    }
+
+    function renderLicenses(licenses) {
+        const tbody = document.getElementById('licensesTable');
+        
+        if (licenses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nenhuma licença gerada por você</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = licenses.map(l => {
+            const created = new Date(l.createdDate).toLocaleDateString('pt-BR');
+            const usedDate = l.usedDate ? new Date(l.usedDate).toLocaleDateString('pt-BR') : '—';
+            const statusBadge = l.isUsed 
+                ? `<span class="badge bg-danger">Ativada (ID: ${l.usedByUserId})</span>`
+                : `<span class="badge bg-success">Disponível</span>`;
+                
+            return `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <code class="text-white" style="font-size: 0.95rem;">${l.key}</code>
+                            <button class="btn btn-sm p-1 text-muted hover-white" onclick="copyToClipboard('${l.key}')" title="Copiar">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-primary">${l.subscriptionName}</span></td>
+                    <td>${l.daysValid} dias</td>
+                    <td>${statusBadge}</td>
+                    <td>${created}</td>
+                    <td>${usedDate}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function showTableError() {
+        document.getElementById('licensesTable').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Erro ao carregar licenças</td></tr>';
+    }
+
+    // Criar licença
+    document.getElementById('createLicenseForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const days = parseInt(document.getElementById('daysValid').value);
+
+        try {
+            const response = await fetch('/api/reseller/license', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subscriptionName: '',  // backend usa o nome do revendedor automaticamente
+                    daysValid: days,
+                    customKey: null,
+                    resellerPrefix: null
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Exibir resultado
+                const resultDiv = document.getElementById('generationResult');
+                const displayH4 = document.getElementById('generatedKeyDisplay');
+                displayH4.textContent = result.licenseKey;
+                resultDiv.classList.remove('d-none');
+                
+                alert('Licença gerada com sucesso!');
+                loadLicenses();
+            } else {
+                const err = await response.json();
+                alert('Erro ao gerar licença: ' + (err.message || 'Erro interno'));
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro de conexão ao gerar licença');
+        }
+    });
+
+    // Copiar
+    function copyGeneratedKey() {
+        const key = document.getElementById('generatedKeyDisplay').textContent;
+        copyToClipboard(key);
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        alert('Licença copiada com sucesso!');
+    }
+
+    // Busca rápida
+    document.getElementById('searchBox').addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const filtered = resellerLicenses.filter(l => l.key.toLowerCase().includes(query));
+        renderLicenses(filtered);
+    });
+
+    // Inicialização
+    loadLicenses();
+</script>
+}

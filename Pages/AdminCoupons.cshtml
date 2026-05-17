@@ -1,0 +1,222 @@
+@page
+@model BelgaAuthAPI.Pages.AdminCouponsModel
+@{
+    ViewData["Title"] = "Cupons de Desconto";
+    ViewData["Page"] = "Coupons";
+}
+
+<div class="row">
+    <!-- Criar Novo Cupom -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm h-100" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08);">
+            <div class="card-header border-bottom border-light border-opacity-10 py-3">
+                <h5 class="text-white mb-0"><i class="bi bi-tag-fill me-2 text-white"></i>Criar Novo Cupom</h5>
+            </div>
+            <div class="card-body">
+                <form id="createCouponForm" onsubmit="handleCreateCoupon(event)">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Código do Cupom</label>
+                        <input type="text" class="form-control text-uppercase font-monospace" id="couponCode" placeholder="EX: DESCONTO10" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Tipo do Benefício</label>
+                        <select class="form-select" id="benefitType" onchange="toggleBenefitFields()" style="background: rgba(0,0,0,0.3); color: #fff; border-color: rgba(255,255,255,0.1);">
+                            <option value="discount">Desconto no Preço (Paga menos R$)</option>
+                            <option value="bonus">Bônus de Créditos (Ganha mais Créditos)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="discountField">
+                        <label class="form-label text-muted small">Desconto no Valor (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="discountPercentage" min="1" max="100" value="10" />
+                            <span class="input-group-text bg-dark border-light border-opacity-10 text-white">%</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 d-none" id="bonusField">
+                        <label class="form-label text-muted small">Bônus em Créditos (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="bonusPercentage" min="1" max="1000" value="20" />
+                            <span class="input-group-text bg-dark border-light border-opacity-10 text-white">%</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Limite de Usos (Opcional)</label>
+                        <input type="number" class="form-control" id="maxUses" min="1" placeholder="Ex: 50 usos" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-muted small">Data de Expiração (Opcional)</label>
+                        <input type="date" class="form-control" id="expirationDate" style="background: rgba(0,0,0,0.3); color: #fff; border-color: rgba(255,255,255,0.1);" />
+                    </div>
+
+                    <button type="submit" class="btn btn-light w-100 py-2 fw-bold"><i class="bi bi-plus-circle me-1"></i> Criar Cupom</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Cupons Ativos -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm h-100" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08);">
+            <div class="card-header border-bottom border-light border-opacity-10 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="text-white mb-0"><i class="bi bi-list-stars me-2 text-white"></i>Cupons Ativos</h5>
+                <button class="btn btn-sm btn-outline-light" onclick="loadCoupons()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" style="background: transparent !important; color: #f5f5f5 !important;">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Benefício</th>
+                                <th>Usos</th>
+                                <th>Expiração</th>
+                                <th>Criado Em</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="couponsTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Carregando cupons...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function loadCoupons() {
+        try {
+            const res = await fetch('/api/payments/admin/coupons');
+            if (!res.ok) throw new Error();
+            const coupons = await res.json();
+            
+            const tbody = document.getElementById('couponsTableBody');
+            if (coupons.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Nenhum cupom cadastrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = coupons.map(c => {
+                const benefit = c.discountPercentage > 0 
+                    ? `<span class="badge bg-danger text-white">-${c.discountPercentage}% Desconto</span>`
+                    : `<span class="badge bg-success text-white">+${c.bonusPercentage}% Bônus</span>`;
+
+                const usesLabel = c.maxUses 
+                    ? `${c.usesCount} / ${c.maxUses}` 
+                    : `${c.usesCount} / ∞`;
+
+                const expiry = c.expirationDate 
+                    ? new Date(c.expirationDate).toLocaleDateString('pt-BR') 
+                    : '<span class="text-muted">Nunca</span>';
+
+                const created = new Date(c.createdDate).toLocaleDateString('pt-BR');
+
+                return `
+                    <tr>
+                        <td class="font-monospace fw-bold text-white">${c.code}</td>
+                        <td>${benefit}</td>
+                        <td>${usesLabel}</td>
+                        <td>${expiry}</td>
+                        <td><small class="text-muted">${created}</small></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon('${c.code}')">
+                                <i class="bi bi-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch(e) {
+            document.getElementById('couponsTableBody').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Erro ao carregar cupons</td></tr>';
+        }
+    }
+
+    function toggleBenefitFields() {
+        const type = document.getElementById('benefitType').value;
+        const discountField = document.getElementById('discountField');
+        const bonusField = document.getElementById('bonusField');
+
+        if (type === 'discount') {
+            discountField.classList.remove('d-none');
+            bonusField.classList.add('d-none');
+        } else {
+            discountField.classList.add('d-none');
+            bonusField.classList.remove('d-none');
+        }
+    }
+
+    async function handleCreateCoupon(event) {
+        event.preventDefault();
+
+        const code = document.getElementById('couponCode').value.trim();
+        const type = document.getElementById('benefitType').value;
+        const discount = parseInt(document.getElementById('discountPercentage').value) || 0;
+        const bonus = parseInt(document.getElementById('bonusPercentage').value) || 0;
+        const maxUsesVal = document.getElementById('maxUses').value;
+        const expiryVal = document.getElementById('expirationDate').value;
+
+        const payload = {
+            code: code,
+            discountPercentage: type === 'discount' ? discount : 0,
+            bonusPercentage: type === 'bonus' ? bonus : 0,
+            maxUses: maxUsesVal ? parseInt(maxUsesVal) : null,
+            expirationDate: expiryVal ? new Date(expiryVal).toISOString() : null,
+            isActive: true
+        };
+
+        try {
+            const res = await fetch('/api/payments/admin/coupons', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert('Erro ao criar cupom: ' + (err.message || 'Erro desconhecido'));
+                return;
+            }
+
+            alert('Cupom criado com sucesso!');
+            document.getElementById('createCouponForm').reset();
+            toggleBenefitFields();
+            loadCoupons();
+        } catch(e) {
+            alert('Erro de conexão ao criar cupom');
+        }
+    }
+
+    async function deleteCoupon(code) {
+        if (!confirm(`Deseja realmente deletar o cupom ${code}?`)) return;
+
+        try {
+            const res = await fetch(`/api/payments/admin/coupons/${code}`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert('Erro ao deletar cupom: ' + (err.message || 'Erro desconhecido'));
+                return;
+            }
+
+            alert('Cupom deletado!');
+            loadCoupons();
+        } catch(e) {
+            alert('Erro de conexão ao deletar cupom');
+        }
+    }
+
+    // Inicializar
+    loadCoupons();
+</script>
+}

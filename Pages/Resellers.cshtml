@@ -1,0 +1,207 @@
+@page
+@model BelgaAuthAPI.Pages.ResellersModel
+@{
+    ViewData["Title"] = "Revendedores";
+    ViewData["Page"] = "Resellers";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-shop"></i> Gerenciar Revendedores</h1>
+    <a href="/CreateReseller" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Criar Revendedor
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive" style="overflow-x: auto !important; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12) !important;">
+            <table class="table table-striped" style="min-width: 1200px !important; background: #1a1a1a !important; color: #f5f5f5 !important; margin-bottom: 0 !important;">
+                <thead style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)) !important; color: #f5f5f5 !important;">
+                    <tr>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">ID</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Username</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Senha</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Nome</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Créditos</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Licenças Criadas</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Licenças Usadas</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Último Login</th>
+                        <th style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">Status</th>
+                        <th style="min-width: 180px !important; color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important; text-align: center; white-space: nowrap !important;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="resellersBody" style="background: #1a1a1a !important;">
+                    <tr style="background: #1a1a1a !important;">
+                        <td colspan="10" class="text-center" style="color: #f5f5f5 !important;">
+                            <div class="spinner-border" role="status" style="color: #ffffff !important;">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table tbody tr {
+        background: #1a1a1a !important;
+        color: #f5f5f5 !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #f5f5f5 !important;
+    }
+    
+    .table tbody td {
+        background: transparent !important;
+        color: #f5f5f5 !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    
+    .table tbody td strong {
+        color: #f5f5f5 !important;
+    }
+</style>
+
+@section Scripts {
+<script>
+    async function loadResellers() {
+        try {
+            const response = await fetch('/api/admin/resellers');
+            if (response.ok) {
+                const resellers = await response.json();
+                const tbody = document.getElementById('resellersBody');
+                
+                if (resellers.length === 0) {
+                    tbody.innerHTML = '<tr style="background: #1a1a1a !important;"><td colspan="10" class="text-center text-muted" style="color: #a3a3a3 !important;">Nenhum revendedor encontrado</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = resellers.map(r => `
+                    <tr style="background: #1a1a1a !important; color: #f5f5f5 !important;">
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">${r.id}</td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;"><strong style="color: #f5f5f5 !important;">${r.username}</strong></td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;"><code class="text-white">${r.passwordPlain || '—'}</code></td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">${r.name || '-'}</td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;"><span class="badge bg-info text-dark" style="background: linear-gradient(135deg, #ffffff, #a1a1aa) !important; color: #000000 !important; font-weight: 800 !important; border: 1px solid rgba(255, 255, 255, 0.3) !important;">${r.credits || 0}</span></td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;"><span class="badge bg-primary" style="background: #52525b !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.1) !important;">${r.totalLicensesCreated || 0}</span></td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;"><span class="badge bg-success" style="background: linear-gradient(135deg, #22c55e, #15803d) !important; border: 1px solid rgba(34, 197, 94, 0.2) !important;">${r.totalLicensesUsed || 0}</span></td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">${r.lastLogin ? new Date(r.lastLogin).toLocaleString('pt-BR') : 'Nunca'}</td>
+                        <td style="color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important;">
+                            <span class="badge ${r.isActive ? 'bg-success' : 'bg-danger'}">
+                                ${r.isActive ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </td>
+                        <td style="min-width: 180px !important; color: #f5f5f5 !important; border-color: rgba(255, 255, 255, 0.12) !important; text-align: center; white-space: nowrap !important;">
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm" onclick="addCredits(${r.id}, '${r.username}')" title="Adicionar Créditos" style="background: linear-gradient(135deg, #22c55e, #15803d) !important; border: 1px solid rgba(34, 197, 94, 0.3) !important; color: #fff !important; margin-right: 4px; border-radius: 4px !important; font-weight: 700; box-shadow: 0 3px 8px rgba(34, 197, 94, 0.2);">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                                <a href="/EditReseller?id=${r.id}" class="btn btn-sm" title="Editar" style="background: linear-gradient(135deg, #6b7280, #374151) !important; border: 1px solid rgba(107, 114, 128, 0.3) !important; color: #fff !important; margin-right: 4px; border-radius: 4px !important; font-weight: 700; box-shadow: 0 3px 8px rgba(107, 114, 128, 0.2);">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm" onclick="toggleResellerStatus(${r.id}, ${r.isActive})" title="${r.isActive ? 'Bloquear' : 'Desbloquear'}" style="background: linear-gradient(135deg, #eab308, #ca8a04) !important; border: 1px solid rgba(234, 179, 8, 0.3) !important; color: #fff !important; margin-right: 4px; border-radius: 4px !important; font-weight: 700; box-shadow: 0 3px 8px rgba(234, 179, 8, 0.2);">
+                                    <i class="bi bi-${r.isActive ? 'lock' : 'unlock'}"></i>
+                                </button>
+                                <button class="btn btn-sm" onclick="deleteReseller(${r.id})" title="Deletar" style="background: linear-gradient(135deg, #ef4444, #b91c1c) !important; border: 1px solid rgba(239, 68, 68, 0.3) !important; color: #fff !important; border-radius: 4px !important; font-weight: 700; box-shadow: 0 3px 8px rgba(239, 68, 68, 0.2);">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar revendedores:', error);
+            document.getElementById('resellersBody').innerHTML = '<tr style="background: #1a1a1a !important;"><td colspan="10" class="text-center text-danger" style="color: #ffb3b3 !important;">Erro ao carregar revendedores</td></tr>';
+        }
+    }
+    
+    loadResellers();
+    setInterval(loadResellers, 30000);
+    
+    async function addCredits(resellerId, username) {
+        const amountStr = prompt(`Quantos créditos deseja adicionar ao revendedor ${username}?\nUse valores negativos para remover créditos.`, "10");
+        if (amountStr === null) return;
+        
+        const amount = parseInt(amountStr);
+        if (isNaN(amount) || amount === 0) {
+            alert("Por favor, digite um número de créditos válido.");
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/admin/resellers/${resellerId}/credits`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credits: amount })
+            });
+            
+            const result = await response.json();
+            if (response.ok) {
+                alert(`Créditos alterados com sucesso!\nSaldo atualizado: ${result.newBalance} créditos.`);
+                loadResellers();
+            } else {
+                alert(`Erro ao gerenciar créditos: ${result.message || 'Erro desconhecido'}`);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert("Erro ao gerenciar créditos.");
+        }
+    }
+    
+    async function toggleResellerStatus(resellerId, currentStatus) {
+        const action = currentStatus ? 'bloquear' : 'desbloquear';
+        if (!confirm(`Tem certeza que deseja ${action} este revendedor?`)) return;
+        
+        try {
+            const response = await fetch(`/api/admin/resellers/${resellerId}/toggle-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (response.ok) {
+                alert(`Revendedor ${action}do com sucesso!`);
+                loadResellers();
+            } else {
+                const result = await response.json();
+                alert(`Erro ao ${action} revendedor: ${result.message || 'Erro desconhecido'}`);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert(`Erro ao ${action} revendedor`);
+        }
+    }
+    
+    async function deleteReseller(resellerId) {
+        if (!confirm('⚠️ ATENÇÃO: Tem certeza que deseja DELETAR este revendedor?\n\nEsta ação é IRREVERSÍVEL e irá:\n- Deletar o revendedor permanentemente\n- Deletar todas as licenças criadas por ele\n- Deletar todos os usuários criados por ele\n\nEsta ação NÃO pode ser desfeita!')) return;
+        
+        if (!confirm('Confirma a exclusão permanente deste revendedor?')) return;
+        
+        try {
+            const response = await fetch(`/api/admin/resellers/${resellerId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                alert('Revendedor deletado com sucesso!');
+                loadResellers();
+            } else {
+                const result = await response.json();
+                alert(`Erro ao deletar revendedor: ${result.message || 'Erro desconhecido'}`);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao deletar revendedor');
+        }
+    }
+</script>
+}
+
+
+
+

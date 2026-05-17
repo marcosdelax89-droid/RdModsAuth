@@ -1,0 +1,14 @@
+@{
+    if (ViewData["UseResellerLayout"]?.ToString() == "true")
+    {
+        Layout = "_ResellerLayout";
+    }
+    else
+    {
+        Layout = "_Layout";
+    }
+}
+
+
+
+

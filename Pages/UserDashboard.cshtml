@@ -1,0 +1,574 @@
+@page
+@model BelgaAuthAPI.Pages.UserDashboardModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Painel do Cliente";
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BelgaAuth</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-dark: #000000;
+            --bg-card: rgba(15, 15, 18, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            --text-light: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --discord-color: #5865F2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Efeitos sutis de fundo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 15%, rgba(255, 255, 255, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 85%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.005) 2px, rgba(255, 255, 255, 0.005) 4px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .dashboard-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        /* Top Bar */
+        .top-navbar {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .brand-logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #ffffff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-logo i {
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
+        }
+
+        .top-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        /* Cartões de Layout */
+        .premium-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            height: 100%;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.8);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .premium-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 15px 40px rgba(255, 255, 255, 0.05);
+        }
+
+        .card-header-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 1rem;
+        }
+
+        .card-header-custom h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .card-header-custom i {
+            font-size: 1.4rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Lista de Informações */
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-item-label {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .info-item-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* Badges de Status */
+        .badge-premium-active {
+            background: #ffffff;
+            color: #000000;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-premium-paused {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+        }
+
+        .badge-premium-expired {
+            background: #ef4444;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Caixa de tempo restante minimalista */
+        .time-box-minimal {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+
+        .time-box-minimal-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .time-box-minimal-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        /* Subseções de Ação */
+        .action-subsection {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .action-subsection:last-child {
+            margin-bottom: 0;
+        }
+
+        .action-subsection-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-subsection-title i {
+            font-size: 1.1rem;
+        }
+
+        .action-subsection-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        /* Botões */
+        .btn-premium-solid {
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: 700;
+            border: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+        }
+
+        .btn-premium-solid:hover {
+            background-color: #e4e4e7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-premium-outline {
+            background: transparent;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+        }
+
+        .btn-premium-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #ffffff;
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .btn-premium-discord {
+            background-color: var(--discord-color);
+            color: #ffffff;
+            font-weight: 700;
+            border: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+        }
+
+        .btn-premium-discord:hover {
+            background-color: #4752c4;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+        }
+
+        .btn-premium-logout {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            font-weight: 700;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+        }
+
+        .btn-premium-logout:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <form method="post" asp-page-handler="Logout" id="logoutForm" class="d-none"></form>
+
+    <div class="dashboard-container">
+        <!-- Top Navbar -->
+        <div class="top-navbar fade-in" style="animation-delay: 0.05s;">
+            <a class="brand-logo" href="/UserDashboard">
+                <i class="bi bi-shield-lock-fill"></i>BelgaAuth
+            </a>
+            
+            <div class="top-nav-actions">
+                <!-- Badge Online -->
+                <span class="badge bg-light text-dark px-3 py-2 rounded-pill font-monospace fw-bold shadow-sm d-flex align-items-center" style="font-size: 0.8rem;">
+                    <span class="spinner-grow spinner-grow-sm text-success me-2" role="status" style="width: 8px; height: 8px;"></span>
+                    <i class="bi bi-people-fill me-1"></i>@Model.OnlineUsersCount Online
+                </span>
+                
+                <span class="text-muted d-none d-md-inline" style="font-size: 0.9rem; font-weight: 500;">Olá, @Model.User?.Username</span>
+            </div>
+        </div>
+
+        <!-- Alertas TempData -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4 fade-in" role="alert" style="border-radius: 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff;">
+                <i class="bi bi-check-circle-fill me-2 text-white"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4 fade-in" role="alert" style="border-radius: 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.25); color: #ffb3b3;">
+                <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Grid Principal (Compacto e Organizado) -->
+        <div class="row g-4 mb-4">
+            <!-- Coluna Esquerda: Dados do Usuário & Assinatura -->
+            <div class="col-lg-6 fade-in" style="animation-delay: 0.1s;">
+                <div class="premium-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-person-fill"></i>
+                        <h3>Detalhes da Assinatura</h3>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-item-label">Nome de Usuário</span>
+                        <span class="info-item-value">@Model.User?.Username</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-item-label">Status da Licença</span>
+                        <span class="info-item-value">
+                            @if (Model.ActiveSubscription != null)
+                            {
+                                @if (Model.ActiveSubscription.IsPaused)
+                                {
+                                    <span class="badge-premium-paused"><i class="bi bi-pause-circle-fill me-1"></i>Pausada</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-premium-active"><i class="bi bi-check-circle-fill me-1"></i>Ativo</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge-premium-expired"><i class="bi bi-x-circle-fill me-1"></i>Expirado</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-item-label">Produto / Dono</span>
+                        <span class="info-item-value fw-bold">@(Model.ActiveSubscription?.SubscriptionName ?? "Sem Assinatura")</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-item-label">Identificação HWID</span>
+                        <span class="info-item-value font-monospace" style="font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @(Model.User?.HWID ?? "Não Vinculado")
+                        </span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-item-label">Expiração</span>
+                        <span class="info-item-value">
+                            @if (Model.ActiveSubscription != null)
+                            {
+                                @if (Model.ActiveSubscription.IsPaused)
+                                {
+                                    <span class="text-white fw-bold"><i class="bi bi-snow2 me-1"></i>Congelado</span>
+                                }
+                                else
+                                {
+                                    @DateTimeOffset.FromUnixTimeSeconds(Model.ActiveSubscription.Expiry).LocalDateTime.ToString("dd/MM/yyyy HH:mm")
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-danger fw-bold">Expirada</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-item-label">Membro Desde</span>
+                        <span class="info-item-value">@Model.User?.CreatedDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+
+                    <!-- Caixa de Tempo Restante -->
+                    <div class="time-box-minimal">
+                        <span class="time-box-minimal-label">Tempo Restante</span>
+                        <span class="time-box-minimal-value">@Model.TimeRemaining</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Ações & Configurações da Licença -->
+            <div class="col-lg-6 fade-in" style="animation-delay: 0.15s;">
+                <div class="premium-card d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="card-header-custom">
+                            <i class="bi bi-sliders"></i>
+                            <h3>Configurações de Licença</h3>
+                        </div>
+
+                        <!-- Subseção A: Reset HWID -->
+                        <div class="action-subsection">
+                            <div class="action-subsection-title">
+                                <i class="bi bi-device-ssd-fill text-white"></i>
+                                <span>Liberar HWID</span>
+                            </div>
+                            <p class="action-subsection-text">
+                                Trocou de computador ou teve incompatibilidade? Libere seu login para ser usado em outra máquina. **Disponível uma vez a cada 24 horas.**
+                            </p>
+                            
+                            <form method="post" asp-page-handler="ResetHWID">
+                                <button type="submit" class="btn btn-premium-solid w-100" onclick="return confirm('Deseja resetar seu HWID? Um novo vínculo será criado no seu próximo login.')">
+                                    <i class="bi bi-shield-slash-fill me-1"></i> Resetar HWID Agora
+                                </button>
+                            </form>
+                            @if (Model.User?.LastHWIDReset != null)
+                            {
+                                <div class="text-start mt-2">
+                                    <small class="text-muted" style="font-size: 0.75rem;">Último reset em: @Model.User.LastHWIDReset.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Subseção B: Pausar/Congelar -->
+                        <div class="action-subsection">
+                            <div class="action-subsection-title">
+                                <i class="bi bi-snow2 text-white"></i>
+                                <span>Congelar Dias</span>
+                            </div>
+                            <p class="action-subsection-text">
+                                Vai ficar sem jogar? Congele seu tempo restante para os dias não serem descontados. **O despause é automático quando você logar no injetor.** (Limite: 1 vez)
+                            </p>
+                            
+                            <form method="post" asp-page-handler="PauseSubscription">
+                                @if (Model.ActiveSubscription?.IsPaused == true)
+                                {
+                                    <button type="button" class="btn btn-premium-outline w-100 disabled" style="opacity: 0.5;">
+                                        <i class="bi bi-pause-fill me-1"></i> Assinatura Congelada
+                                    </button>
+                                }
+                                else if (Model.User?.HasPaused == true)
+                                {
+                                    <button type="button" class="btn btn-premium-outline w-100 disabled" style="opacity: 0.5;">
+                                        <i class="bi bi-x-circle me-1"></i> Limite de Pause Utilizado
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-premium-outline w-100" onclick="return confirm('Deseja pausar seus dias? O tempo parará imediatamente e voltará a contar no próximo login no loader.')">
+                                        <i class="bi bi-pause-fill me-1"></i> Congelar Assinatura
+                                    </button>
+                                }
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opções & Suporte (Compacto e Alinhado) -->
+        <div class="fade-in" style="animation-delay: 0.2s;">
+            <div class="premium-card">
+                <div class="card-header-custom" style="margin-bottom: 1.25rem;">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <h3>Opções do Painel</h3>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button class="btn btn-premium-outline w-100 py-2.5" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Atualizar Dados
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="https://discord.gg/3Sk2hDu8Wc" target="_blank" class="btn btn-premium-discord w-100 py-2.5 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-discord me-2"></i> Suporte Discord
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-premium-logout w-100 py-2.5" onclick="confirmLogout()">
+                            <i class="bi bi-box-arrow-right me-1"></i> Sair do Painel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmLogout() {
+            if (confirm('Tem certeza de que deseja sair?')) {
+                document.getElementById('logoutForm').submit();
+            }
+        }
+    </script>
+</body>
+</html>

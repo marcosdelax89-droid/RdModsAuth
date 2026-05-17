@@ -1,0 +1,22 @@
+[Unit]
+Description=BelgaAuth API
+After=network.target
+
+[Service]
+Type=notify
+User=root
+WorkingDirectory=/root/belgaauth/publish
+ExecStart=/usr/bin/dotnet /root/belgaauth/publish/BelgaAuthAPI.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=belgaauth
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://0.0.0.0:5000
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
