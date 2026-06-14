@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - BelgaAuth Painel</title>
+    <title>@ViewData["Title"] - RD MODS Painel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -12,14 +12,14 @@
         :root {
             --primary-color: #ffffff;
             --secondary-color: #3f3f46;
-            --accent-red: #18181b;
-            --dark-bg: #09090b;
-            --darker-bg: #000000;
-            --card-bg: rgba(18, 18, 18, 0.65);
+            --accent-red: rgba(225, 29, 72, 0.2);
+            --dark-bg: #150507;
+            --darker-bg: #0a0203;
+            --card-bg: rgba(225, 29, 72, 0.12);
             --card-border: rgba(255, 255, 255, 0.08);
             --text-light: #f5f6fa;
             --text-muted: #a1a1aa;
-            --red-glow: rgba(255, 255, 255, 0.06);
+            --red-glow: rgba(225, 29, 72, 0.2);
             --primary-gradient: linear-gradient(135deg, #ffffff 0%, #3f3f46 100%);
         }
         
@@ -32,9 +32,9 @@
         body {
             background: var(--darker-bg);
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.98) 0%, #000000 100%);
+                radial-gradient(circle at 10% 20%, rgba(225, 29, 72, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(225, 29, 72, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(15, 2, 3, 0.98) 0%, #0a0203 100%);
             background-attachment: fixed;
             min-height: 100vh;
             font-family: 'Outfit', sans-serif;
@@ -57,10 +57,10 @@
         }
         
         .header-nav {
-            background: rgba(9, 9, 11, 0.7);
+            background: rgba(20, 2, 3, 0.75);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(225, 29, 72, 0.25);
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -133,8 +133,8 @@
         }
 
         .user-badge {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(225, 29, 72, 0.1);
+            border: 1px solid rgba(225, 29, 72, 0.25);
             border-radius: 12px;
             padding: 8px 18px;
             display: flex;
@@ -230,7 +230,7 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             animation: fadeInUp 0.6s ease-out;
             animation-fill-mode: both;
-            background: linear-gradient(135deg, var(--card-bg) 0%, #1f1f1f 100%);
+            background: linear-gradient(135deg, var(--card-bg) 0%, #150507 100%);
             overflow: hidden;
             position: relative;
         }
@@ -663,7 +663,7 @@
     <div class="header-nav">
         <div class="header-logo">
             <i class="bi bi-shield-lock"></i>
-            <span>BelgaAuth</span>
+            <span>RD MODS</span>
         </div>
         <div class="header-menu">
             <a class="nav-link @(ViewData["Page"]?.ToString() == "Dashboard" ? "active" : "")" href="/">
